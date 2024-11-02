@@ -1,7 +1,8 @@
+use anyhow::{Context, Result};
 use clap::Parser;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::process::Command;
-use std::io::Write;
-use anyhow::{Result, Context};
+use webbrowser;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -57,16 +58,21 @@ fn format_content(content: &str, query: &[String]) -> String {
     }
 }
 
+fn get_provider_url(provider: &str, query: &str) -> Result<String> {
+    let encoded_query = utf8_percent_encode(query, NON_ALPHANUMERIC).to_string();
+
+    let url = match provider {
+        "claude" => format!("https://claude.ai/new?q={}", encoded_query),
+        "chatgpt" => format!("https://chatgpt.com/?q={}", encoded_query),
+        _ => anyhow::bail!("Unsupported provider: {}", provider),
+    };
+
+    Ok(url)
+}
+
 fn run_search(input: &str, provider: &str) -> Result<()> {
-    let output = Command::new("s")
-        .args(["-p", provider])
-        .arg(input)
-        .output()
-        .context("Failed to run search command")?;
-
-    std::io::stdout().write_all(&output.stdout)?;
-    std::io::stderr().write_all(&output.stderr)?;
-
+    let url = get_provider_url(provider, input)?;
+    webbrowser::open(&url).context("Failed to open browser")?;
     Ok(())
 }
 
