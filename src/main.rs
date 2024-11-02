@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
+use arboard::Clipboard;
 use clap::Parser;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use std::process::Command;
 use webbrowser;
 
 #[derive(Parser, Debug)]
@@ -21,27 +21,10 @@ struct Args {
 }
 
 fn get_clipboard_content() -> Result<String> {
-    #[cfg(target_os = "macos")]
-    {
-        let output = Command::new("pbpaste")
-            .output()
-            .context("Failed to run pbpaste")?;
-        Ok(String::from_utf8(output.stdout)?)
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let wayland_output = Command::new("wl-paste").output();
-        match wayland_output {
-            Ok(output) => return Ok(String::from_utf8(output.stdout)?),
-            Err(_) => {
-                let output = Command::new("xclip")
-                    .args(["-selection", "clipboard", "-o"])
-                    .output()
-                    .context("Failed to run clipboard command. Install xclip or wl-paste")?;
-                Ok(String::from_utf8(output.stdout)?)
-            }
-        }
-    }
+    let mut clipboard = Clipboard::new().context("Failed to initialize clipboard")?;
+    clipboard
+        .get_text()
+        .context("Failed to get clipboard content")
 }
 
 fn format_content(content: &str, query: &[String]) -> String {
