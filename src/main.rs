@@ -7,17 +7,17 @@ use webbrowser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// system clipboard
+    /// Inject clipboard content into prompt
     #[arg(short, long)]
     clipboard: bool,
 
-    /// LLM provider
+    /// LLM provider to use
     #[arg(short, long, default_value = "claude")]
     provider: String,
 
-    /// query
+    /// prompt/query text
     #[arg(trailing_var_arg = true)]
-    query: Vec<String>,
+    prompt: Vec<String>,
 }
 
 fn get_clipboard_content() -> Result<String> {
@@ -67,10 +67,10 @@ fn main() -> Result<()> {
         if content.trim().is_empty() {
             anyhow::bail!("Clipboard is empty");
         }
-        let formatted = format_content(&content, &args.query);
+        let formatted = format_content(&content, &args.prompt);
         run_search(&formatted, &args.provider)?;
     } else {
-        let query = args.query.join(" ");
+        let query = args.prompt.join(" ");
         run_search(&query, &args.provider)?;
     }
 
