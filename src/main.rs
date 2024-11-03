@@ -7,7 +7,11 @@ use webbrowser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Inject clipboard content into prompt
+    /// Invoke conscious-data/contextualize to load content from specified files
+    #[arg(short = 'x', long)]
+    context: Option<Vec<String>>,
+
+    /// Inject clipboard content as context
     #[arg(short, long)]
     clipboard: bool,
 
@@ -19,7 +23,6 @@ struct Args {
     #[arg(trailing_var_arg = true)]
     prompt: Vec<String>,
 }
-
 fn get_clipboard_content() -> Result<String> {
     let mut clipboard = Clipboard::new().context("Failed to initialize clipboard")?;
     clipboard
@@ -59,14 +62,42 @@ fn run_search(input: &str, provider: &str) -> Result<()> {
     Ok(())
 }
 
+fn run_contextualize(files: &[String]) -> Result<()> {
+    use std::process::Command;
+
+    let mut cmd = Command::new("contextualize");
+    cmd.arg("cat").arg("--output").arg("clipboard");
+    cmd.args(files);
+
+    let output = cmd
+        .output()
+        .context("Failed to run contextualize command")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("contextualize command failed: {}", stderr);
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.clipboard {
-        let content = get_clipboard_content()?;
-        if content.trim().is_empty() {
-            anyhow::bail!("Clipboard is empty");
-        }
+    if args.clipboard && args.context.is_some() {
+        anyhow::bail!("--clipboard and --context flags are not compatible");
+    }
+
+    let content = if let Some(files) = args.context {
+        run_contextualize(&files)?;
+        get_clipboard_content()?
+    } else if args.clipboard {
+        get_clipboard_content()?
+    } else {
+        String::new()
+    };
+
+    if !content.is_empty() {
         let formatted = format_content(&content, &args.prompt);
         run_search(&formatted, &args.provider)?;
     } else {
