@@ -1,13 +1,25 @@
 use anyhow::{Context, Result};
 use arboard::Clipboard;
-use clap::Parser;
+use clap::{command, Parser};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use webbrowser;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+#[command(help_template = "{before-help}{name} {version}
+{author-with-newline}{about-with-newline}
+{usage-heading} {usage}
+
+{all-args}{after-help}
+
+Examples:
+    search \"what is an inframodel\"
+    search --clipboard \"what's causing this error?\"
+    search -x main.py \"walk me through this code\"
+    search -p chatgpt \"how do I write a fish function\"
+")]
 struct Args {
-    /// Invoke conscious-data/contextualize to load content from specified files
+    /// Invoke conscious-data/contextualize to load content from specified paths
     #[arg(short = 'x', long)]
     context: Option<Vec<String>>,
 
