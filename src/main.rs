@@ -20,7 +20,7 @@ Examples:
 ")]
 struct Args {
     /// Invoke conscious-data/contextualize to load content from specified paths
-    #[arg(short = 'x', long)]
+    #[arg(short = 'x', long, num_args = 1.., value_delimiter = ' ')]
     context: Option<Vec<String>>,
 
     /// Inject clipboard content as context
