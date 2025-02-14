@@ -28,7 +28,7 @@ struct Args {
     clipboard: bool,
 
     /// LLM provider to use
-    #[arg(short, long, default_value = "claude")]
+    #[arg(short, long, default_value = "chatgpt")]
     provider: String,
 
     /// prompt/query text
